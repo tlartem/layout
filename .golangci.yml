@@ -1,0 +1,105 @@
+version: "2"
+
+linters:
+  default: all
+  disable:
+    - exhaustruct         # Проверяет, что все поля структуры инициализированы при её создании.
+    - forbidigo           # Запрещает использование определённых выражений или функций, указанных в конфигурации.
+    - funcorder           # Проверяет порядок объявления функций для улучшения читаемости.
+    - ireturn             # Анализирует возвращаемые значения функций на соответствие ожиданиям.
+    - mnd                 # Обнаруживает "магические числа" в коде, предлагая заменить их на именованные константы.
+    - nonamedreturns      # Предупреждает о функциях с именованными возвращаемыми значениями, которые не используются.
+    - revive              # Расширяемый и настраиваемый линтер для Go, предлагающий множество проверок.
+    - tagliatelle         # Проверяет стиль и форматирование тегов структур.
+    - varnamelen          # Проверяет длину имён переменных, чтобы избежать слишком коротких или слишком длинных имён.
+    - depguard
+
+  settings:
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - experimental
+        - opinionated
+      disabled-checks:
+        - whyNoLint
+
+  exclusions:
+    generated: lax
+    presets:
+      - comments                  # отключает типичные замечания к комментариям
+      - std-error-handling        # отключает незначительные ошибки при обработке ошибок
+
+    paths:
+      - _test.go
+      - gen/
+      - test/integration/
+
+    rules:
+      - path: pkg/logger
+        linters:
+          - zerologlint
+
+      - path: internal/app
+        linters:
+          - contextcheck
+
+      - path: internal/controller/grpc/
+        linters:
+          - wrapcheck
+
+      - path: internal/controller/http/v2
+        linters:
+          - wrapcheck
+
+      - linters:
+          - err113
+        text: "do not define dynamic errors"
+
+      - linters:
+          - lll
+        source: "^//go:generate "
+
+formatters:
+  enable:
+    - gci          # Упорядочивает импорты по группам (стандартные, сторонние, локальные)
+    - gofmt        # Стандартный инструмент форматирования кода Go
+    - gofumpt      # Более строгая версия gofmt с улучшенной читаемостью
+    - goimports    # Форматирует код и автоматически управляет импортами
+
+  settings:
+    gofumpt:
+      extra-rules: true
+    gci:
+      sections:
+        - standard # Standard section: captures all standard packages.
+        - default # Default section: contains all imports that could not be matched to another section type.
+        - blank # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
+        - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
+        - localmodule # Local module section: contains all local packages. This section is not present unless explicitly enabled.
+        - alias # Alias section: contains all alias imports. This section is not present unless explicitly enabled.
+
+  exclusions:
+    generated: disable
+
+    paths:
+      - gen
+
+issues:
+  max-same-issues: 0
+  fix: true
+
+output:
+  formats:
+    text:
+      path: stdout
+
+  sort-order:
+    - linter
+    - file # путь к файлу, строка, колонка
+
+run:
+  timeout: 5m
+  relative-path-mode: gomod
+  allow-parallel-runners: true
+  allow-serial-runners: true

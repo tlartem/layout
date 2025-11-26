@@ -1,0 +1,319 @@
+openapi: 3.0.0
+info:
+  title: My App API
+  version: 1.0.0
+  description: API for managing user profiles
+servers:
+  - url: http://localhost:8080/noway/layout/api/v2
+    description: Dev
+  - url: http://k8s.noway.ru/noway/layout/api/v2
+    description: Prod
+paths:
+  /profile:
+    post:
+      tags:
+        - Profile
+      operationId: createProfile
+      summary: Create a new profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProfileInput'
+      responses:
+        200:
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProfileOutput'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Profile
+      operationId: updateProfile
+      summary: Update an existing profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileInput'
+      responses:
+        204:
+          description: Profile updated
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /profiles:
+    get:
+      tags:
+        - Profile
+      operationId: getProfiles
+      summary: Get a profiles
+      parameters:
+        - name: sort
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Sort field. Possible values are id, name.
+          example: id
+        - name: order
+          in: query
+          required: false
+          allowEmptyValue: true
+          schema:
+            type: string
+            default: asc
+          description: Sorting direction. Possible values are asc, desc or empty string.
+          example: asc
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of items to skip before returning the results.
+          example: 10
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 10
+          description: Maximum number of items to return.
+          example: 10
+      responses:
+        200:
+          description: Profiles retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GetProfileOutput'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Profiles not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /profile/{id}:
+    get:
+      tags:
+        - Profile
+      operationId: getProfileById
+      summary: Get a profile by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User's ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        200:
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetProfileOutput'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Profile
+      operationId: deleteProfileById
+      summary: Delete a profile by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User's ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        204:
+          description: Profile deleted
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    CreateProfileInput:
+      type: object
+      required:
+        - name
+        - age
+        - email
+        - phone
+      properties:
+        name:
+          type: string
+          description: Full name of the user
+          example: John Doe
+          minLength: 3
+          maxLength: 64
+        age:
+          type: integer
+          description: Age of the user
+          example: 30
+          minimum: 18
+          maximum: 120
+        email:
+          type: string
+          format: email
+          description: Email address of the user
+          example: john.doe@example.com
+        phone:
+          type: string
+          description: Phone number of the user
+          example: +1234567890
+    CreateProfileOutput:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the created profile
+          example: 550e8400-e29b-41d4-a716-446655440000
+    UpdateProfileInput:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the profile
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          nullable: true
+          description: Full name of the user
+          example: John Doe
+          minimum: 18
+          maximum: 120
+        age:
+          type: integer
+          nullable: true
+          description: Age of the user
+          example: 30
+          minimum: 18
+          maximum: 120
+        email:
+          type: string
+          nullable: true
+          description: Email address of the user
+          example: john.doe@example.com
+        phone:
+          type: string
+          nullable: true
+          description: Phone number of the user
+          example: +1234567890
+    GetProfileOutput:
+      type: object
+      required:
+        - id
+        - created_at
+        - updated_at
+        - name
+        - age
+        - contacts
+        - status
+        - verified
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the profile
+          example: 550e8400-e29b-41d4-a716-446655440000
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the profile was created
+          example: 2021-01-01T00:00:00Z
+        updated_at:
+            type: string
+            format: date-time
+            description: Date and time when the profile was last updated
+            example: 2021-01-01T00:00:00Z
+        name:
+          type: string
+          description: Full name of the user
+          example: John Doe
+        age:
+          type: integer
+          description: Age of the user
+          example: 30
+        status:
+          type: integer
+          description: Status of the profile
+          example: 1
+        verified:
+          type: boolean
+          description: Verification status of the profile
+          example: true
+        contacts:
+          type: object
+          required:
+            - email
+            - phone
+          properties:
+            email:
+              type: string
+              description: Email address of the user
+              example: john.doe@example.com
+            phone:
+              type: string
+              description: Phone number of the user
+              example: +1234567890
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+      example:
+        error:
+          error: Profile not found

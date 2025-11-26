@@ -1,0 +1,57 @@
+variables:
+  USERNAME: "noway"
+  APP_NAME: "layout"
+  POSTGRES_DB_NAME: "noway_noway"
+
+stages:
+  - lint
+  - test
+  - build
+  - migration
+  - update-tag
+
+lint:
+  stage: lint
+  script:
+    - golangci-lint run -v
+
+test:
+  stage: test
+  script:
+    - go test -v ./...
+
+build:
+  stage: build
+  variables:
+    IMAGE: $REGISTRY/$USERNAME/$APP_NAME
+    TAG: $CI_COMMIT_SHORT_SHA
+  script:
+    - cat $ENV_FILE > .env
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS" $REGISTRY
+    - docker build --tag $IMAGE:$TAG .
+    - docker push $IMAGE:$TAG
+
+migration:
+  stage: migration
+  variables:
+    DB_URL: postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB_NAME
+    MIGRATE_PATH: ./migration/postgres
+  script:
+    - migrate -database $DB_URL -path $MIGRATE_PATH up
+
+update-tag:
+  stage: update-tag
+  variables:
+    IMAGE: $REGISTRY/$USERNAME/$APP_NAME
+    TAG: $CI_COMMIT_SHORT_SHA
+    REPOSITORY: https://$GITLAB_DEPLOY_USER:$GITLAB_DEPLOY_PASS@gitlab.noway/deploy.git
+    DEPLOYMENT: 1-deployment.yaml
+  script:
+    - git config --global user.email "ci@gitlab.bot"
+    - git config --global user.name "CI Bot"
+    - git clone $REPOSITORY
+    - cd deploy/k8s-manifests/$USERNAME-$APP_NAME
+    - sed -i "s|$IMAGE:.*|$IMAGE:$TAG|g" $DEPLOYMENT
+    - git add $DEPLOYMENT
+    - git commit -m "$USERNAME - $APP_NAME update image $TAG"
+    - git push $REPOSITORY

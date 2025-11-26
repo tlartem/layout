@@ -1,0 +1,14 @@
+all: false
+dir: '{{.InterfaceDir}}/mocks'
+filename: mocks.go
+force-file-write: true
+formatter: goimports
+log-level: info
+pkgname: 'mocks'
+recursive: false
+template: testify
+structname: '{{.InterfaceName}}'
+packages:
+  gitlab.noway/internal/usecase:
+    config:
+      all: True

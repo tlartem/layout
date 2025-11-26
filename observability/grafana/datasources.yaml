@@ -1,0 +1,29 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    basicAuth: false
+    isDefault: true
+    version: 1
+    editable: false
+    jsonData:
+      httpMethod: GET
+
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    access: proxy
+    url: http://tempo:3200
+    basicAuth: false
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: 'loki'
+        customQuery: true
+        query: '{app_name="layout"}  | json | trace_id="$${__trace.traceId}"'
+        spanStartTimeShift: '-5m'
+        spanEndTimeShift: '5m'
